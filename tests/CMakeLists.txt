@@ -15,7 +15,12 @@
 # limitations under the License.
 # ~~~
 
-add_executable(vk_loader_validation_tests loader_validation_tests.cpp)
+SET(TEST_SRCS loader_validation_tests.cpp)
+if(MSVC)
+    set_source_files_properties(${TEST_SRCS} PROPERTIES COMPILE_FLAGS ${LOADER_MSVC_COMPILE_OPTIONS})
+endif()
+
+add_executable(vk_loader_validation_tests ${TEST_SRCS})
 set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
 if(UNIX)
     set_target_properties(vk_loader_validation_tests PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")

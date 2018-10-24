@@ -137,22 +137,6 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     endif()
 endif()
 
-if(MSVC)
-    # Treat warnings as errors
-    add_compile_options("/WX")
-    # Disable RTTI
-    add_compile_options("/GR-")
-    # Warn about nested declarations
-    add_compile_options("/w34456")
-    # Warn about potentially uninitialized variables
-    add_compile_options("/w34701")
-    add_compile_options("/w34703")
-    # Warn about different indirection types.
-    add_compile_options("/w34057")
-    # Warn about signed/unsigned mismatch.
-    add_compile_options("/w34245")
-endif()
-
 # Define a macro to generate source code from vk.xml
 set(SCRIPTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
 macro(GenerateFromVkXml output dependency)
@@ -176,16 +160,29 @@ GenerateFromVkXml(vk_object_types.h helper_file_generator.py)
 GenerateFromVkXml(vk_extension_helper.h helper_file_generator.py)
 GenerateFromVkXml(vk_typemap_helper.h helper_file_generator.py)
 
+set(GENERATE_HELPER_FILE_DEPENDENCIES
+    vk_enum_string_helper.h
+    vk_safe_struct.h
+    vk_safe_struct.cpp
+    vk_object_types.h
+    vk_layer_dispatch_table.h
+    vk_dispatch_table_helper.h
+    vk_extension_helper.h
+    vk_typemap_helper.h)
+
+if(MSVC)
+    # /WX: Treat warnings as errors
+    # /GR-: Disable RTTI
+    # /w34456: Warn about nested declarations
+    # /w34701, /w34703: Warn about potentially uninitialized variables
+    # /w34057: Warn about different indirection types.
+    # /w34245: Warn about signed/unsigned mismatch.
+    set(LOADER_MSVC_COMPILE_OPTIONS /WX /GR- /w34456 /w34701 /w34703 /w34057 /w34245)
+    set_source_files_properties(${GENERATE_HELPER_FILE_DEPENDENCIES} PROPERTIES COMPILE_FLAGS ${LOADER_MSVC_COMPILE_OPTIONS})
+endif()
+
 # Use a custom target to cause the source files to be generated.
-add_custom_target(generate_helper_files
-                  DEPENDS vk_enum_string_helper.h
-                          vk_safe_struct.h
-                          vk_safe_struct.cpp
-                          vk_object_types.h
-                          vk_layer_dispatch_table.h
-                          vk_dispatch_table_helper.h
-                          vk_extension_helper.h
-                          vk_typemap_helper.h)
+add_custom_target(generate_helper_files DEPENDS ${GENERATE_HELPER_FILE_DEPENDENCIES})
 
 set_target_properties(generate_helper_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
 
